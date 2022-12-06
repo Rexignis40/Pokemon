@@ -11,7 +11,7 @@ dbo.connectToServer();
 app.use(bodyParser.urlencoded({ extended: true }));
 
 app.get("/", function (req, res) {
-    res.send("<h1>Bienvenue sur le Pokedick");
+    res.send("<h1>Bienvenue sur le Pokedick</h1>");
   });
 
 //GET
@@ -72,7 +72,24 @@ app.post("/pokedex/update", jsonParser, function (req, res) {
 
   if(req.body.name != undefined) update.name = req.body.name;
   if(req.body.num != undefined) update.num = req.body.num;
-  if(req.body.type != undefined) update.type = req.body.type;
+  if(req.body.type != undefined){
+    update.type = [];
+    let err = undefined;
+    req.body.type.forEach(elm => {
+      GetType(elm, 1).toArray(function (err, result) {
+        if (err) {
+          err = err;
+        } else {
+          console.log(result[0]._id);
+          update.type.push(result[0]._id);
+        }
+      });
+    });
+    if(err != undefined){
+      res.status(400).send("Error fetching type!");
+      return;
+    }
+  }
   
   poke.updateOne(
     {...search},
@@ -140,7 +157,7 @@ app.post("/pokedex/update", jsonParser, function (req, res) {
       res.status(400).send("Error fetching type!");
       return;
     }
-    console.log(insert);
+    
     poke.insertOne(
       {...insert},
       function (err, result) {
