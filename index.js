@@ -193,6 +193,24 @@ app.post("/pokedex/update", jsonParser, function (req, res) {
     );
   });
 
+
+//DELETE
+app.delete("/pokedex/delete", jsonParser, function (req, res) {
+  const dbConnect = dbo.getDb();
+  const poke = dbConnect.collection("pokedex");
+  let list;
+  if(req.body.name != undefined) list = poke.deleteOne({ name: req.body.name }, deleteCallBack);
+  else if(req.body.num != undefined) list = poke.deleteOne({ num: req.body.num }, deleteCallBack);
+  else if(req.body.type != undefined) list = poke.deleteOne({ type: req.body.type }, deleteCallBack);
+  function deleteCallBack (err, result){
+    if (err) {
+      res.status(400).send("Error deleting pokemon");
+    } else {
+      res.status(400).send("Pokemon successfully deleted");
+    }
+  }
+});
+
 app.listen(port, function () {
     console.log(`App listening on port ${port}!`);
   });
