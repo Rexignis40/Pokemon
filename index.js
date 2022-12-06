@@ -110,6 +110,46 @@ app.post("/pokedex/update", jsonParser, function (req, res) {
 
 //Insert
 
+  //Pokedex
+  app.post("/pokedex/insert", jsonParser, function (req, res) {
+    const dbConnect = dbo.getDb();
+    const poke = dbConnect.collection("pokedex");
+
+    let insert = {};
+    if(req.body.name == undefined || req.body.type == undefined || req.body.num == undefined){
+      res.status(400).send("Tout les paramètre ne sont pas envoyer.");
+      return;
+    }
+
+    insert.name = req.body.name;
+    insert.num = req.body.num;
+
+    insert.type = [];
+    let err = undefined;
+    req.body.type.forEach(elm => {
+      GetType(elm, 1).toArray(function (err, result) {
+        if (err) {
+          err = err;
+        } else {
+          console.log(result[0]._id);
+          insert.type.push(result[0]._id);
+        }
+      });
+    });
+    if(err != undefined){
+      res.status(400).send("Error fetching type!");
+      return;
+    }
+    console.log(insert);
+    poke.insertOne(
+      {...insert},
+      function (err, result) {
+        if (err) throw err;
+        res.status(400).json(result);
+     }
+    );
+  });
+
   //Type
   app.post("/type/insert", jsonParser, function (req, res) {
     const dbConnect = dbo.getDb();
