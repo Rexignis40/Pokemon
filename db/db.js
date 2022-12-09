@@ -15,7 +15,6 @@ module.exports = {
         return err;
       }
       
-      //remplacer whatever par le nom de votre DB !
       dbConnection = db.db("grp6");
       console.log("Successfully connected to MongoDB.");
     });

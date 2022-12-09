@@ -5,10 +5,12 @@ const app = express();
 const port = 4444;
 const jsonParser = bodyParser.json();
 var ObjectId = require('mongodb').ObjectID;
+var cors = require('cors');
 
 dbo.connectToServer();
 
 app.use(bodyParser.urlencoded({ extended: true }));
+app.use(cors());
 
 app.get("/", function (req, res) {
     res.send("<h1>Bienvenue sur le Pokedick</h1>");
@@ -16,19 +18,37 @@ app.get("/", function (req, res) {
 
 //GET
   //Pokedex
-app.get("/pokedex", jsonParser, function (req, res) {
+  app.get("/pokedex", jsonParser, function (req, res) {
+    const dbConnect = dbo.getDb();
+    const poke = dbConnect.collection("pokedex");
+    let list;
+    if(req.query.name != undefined) list = poke.find({name: { $eq: req.query.name }});
+    else if(req.query.num != undefined) list = poke.find({num: { $eq: req.query.num }});
+    else list = poke.find({});
+    if(req.query.limit != undefined) list.limit(parseInt(req.query.limit));
+    list.toArray(function (err, result) {
+      if (err) {
+        res.status(400).json({err :"Error fetching pokemons!"});
+      } else {
+        res.status(200).json(result);
+      }
+    });      
+  });
+
+    //Pokedex
+app.get("/pokemon", jsonParser, function (req, res) {
   const dbConnect = dbo.getDb();
-  const poke = dbConnect.collection("pokedex");
+  const poke = dbConnect.collection("pokemon");
   let list;
-  if(req.query.name != undefined) list = poke.find({name: { $eq: req.query.name }});
+if(req.query.name != undefined) list = poke.find({name: new RegExp('.*' + req.query.name + '.*', 'i')});
   else if(req.query.num != undefined) list = poke.find({num: { $eq: req.query.num }});
   else list = poke.find({});
   if(req.query.limit != undefined) list.limit(parseInt(req.query.limit));
   list.toArray(function (err, result) {
     if (err) {
-      res.status(400).send("Error fetching pokemons!");
+      res.status(400).json({err :"Error fetching pokemons!"});
     } else {
-      res.json(result);
+      res.status(200).json(result);
     }
   });      
 });
