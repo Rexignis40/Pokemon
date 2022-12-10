@@ -116,7 +116,7 @@ app.post("/pokedex/update", jsonParser, function (req, res) {
     {$set : {...update}},
     function (err, result) {
       if (err) throw err;
-      res.status(400).json(result);
+      res.status(200).json(result);
    }
   );
 });
@@ -140,7 +140,7 @@ app.post("/pokedex/update", jsonParser, function (req, res) {
       {$set : {...update}},
       function (err, result) {
         if (err) throw err;
-        res.status(400).json(result);
+        res.status(200).json(result);
      }
     );
   });
@@ -168,7 +168,6 @@ app.post("/pokedex/update", jsonParser, function (req, res) {
         if (err) {
           err = err;
         } else {
-          console.log(result[0]._id);
           insert.type.push(result[0]._id);
         }
       });
@@ -182,7 +181,53 @@ app.post("/pokedex/update", jsonParser, function (req, res) {
       {...insert},
       function (err, result) {
         if (err) throw err;
-        res.status(400).json(result);
+        res.status(200).json(result);
+     }
+    );
+  });
+
+    //Pokemon
+  app.post("/pokemon/insert", jsonParser, function (req, res) {
+    const dbConnect = dbo.getDb();
+    const poke = dbConnect.collection("pokemon");
+
+    let insert = {};
+    if(req.body.name == undefined || req.body.type == undefined || req.body.num == undefined){
+      res.status(400).send("Tout les paramètre ne sont pas envoyer.");
+      return;
+    }
+
+    insert.name = req.body.name;
+    insert.num = req.body.num;
+
+    insert.type = [];
+    let err = undefined;
+    console.log(req.body);
+    req.body.type.forEach(elm => {
+      console.log(elm);
+      GetType(elm, 1).toArray(function (err, result) {
+        if (err) {
+          err = err;
+        } else {
+          console.log(result[0]);
+          insert.type.push(result[0]._id);
+        }
+      });
+    });
+    if(err != undefined){
+      res.status(400).send("Error fetching type!");
+      return;
+    }
+    
+    insert.genera = "Pokemon";
+    insert.sprites = {}
+    insert.sprites["front_default"] = "https://clipground.com/images/interrogation-point-clipart-4.jpg";
+
+    poke.insertOne(
+      {...insert},
+      function (err, result) {
+        if (err) throw err;
+        res.status(200).json(result);
      }
     );
   });
@@ -199,7 +244,7 @@ app.post("/pokedex/update", jsonParser, function (req, res) {
       {...insert},
       function (err, result) {
         if (err) throw err;
-        res.status(400).json(result);
+        res.status(200).json(result);
      }
     );
   });
@@ -225,13 +270,12 @@ app.post("/pokedex/update", jsonParser, function (req, res) {
       {...search},
       function (err, result) {
         if (err) throw err;
-        res.status(400).json(result);
+        res.status(200).json(result);
      }
     );
   });
 
-
-//DELETE
+//pokedex
 app.delete("/pokedex/delete", jsonParser, function (req, res) {
   const dbConnect = dbo.getDb();
   const poke = dbConnect.collection("pokedex");
@@ -243,7 +287,25 @@ app.delete("/pokedex/delete", jsonParser, function (req, res) {
     if (err) {
       res.status(400).send("Error deleting pokemon");
     } else {
-      res.status(400).send("Pokemon successfully deleted");
+      res.status(200).send("Pokemon successfully deleted");
+    }
+  }
+});
+
+//pokemon
+app.delete("/pokemon/delete", jsonParser, function (req, res) {
+  const dbConnect = dbo.getDb();
+  const poke = dbConnect.collection("pokemon");
+  let list;
+  if(req.body.uid != undefined) list = poke.deleteOne({ _id: ObjectId(req.body.uid) }, deleteCallBack);
+  else if(req.body.name != undefined) list = poke.deleteOne({ name: req.body.name }, deleteCallBack);
+  else if(req.body.num != undefined) list = poke.deleteOne({ num: req.body.num }, deleteCallBack);
+  else if(req.body.type != undefined) list = poke.deleteOne({ type: req.body.type }, deleteCallBack);
+  function deleteCallBack (err, result){
+    if (err) {
+      res.status(400).send("Error deleting pokemon");
+    } else {
+      res.status(200).send("Pokemon successfully deleted");
     }
   }
 });
