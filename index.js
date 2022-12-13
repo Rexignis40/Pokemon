@@ -200,7 +200,7 @@ app.post("/pokedex/update", jsonParser, function (req, res) {
 
     let insert = {};
     if(req.body.name == undefined || req.body.type == undefined || req.body.num == undefined){
-      res.status(400).send("Tout les paramètre ne sont pas envoyer.");
+      res.status(400).send("Tout les paramètres ne sont pas envoyés.");
       return;
     }
 
@@ -239,7 +239,7 @@ app.post("/pokedex/update", jsonParser, function (req, res) {
 
     let insert = {};
     if(req.body.name == undefined || req.body.type == undefined || req.body.num == undefined){
-      res.status(400).send("Tout les paramètre ne sont pas envoyer.");
+      res.status(400).send("Tout les paramètres ne sont pas envoyés.");
       return;
     }
 
@@ -355,3 +355,61 @@ app.delete("/pokemon/delete", jsonParser, function (req, res) {
 app.listen(port, function () {
     console.log(`App listening on port ${port}!`);
   });
+
+
+// système de user
+app.get("/user", jsonParser, function (req, res) {
+  const dbConnect = dbo.getDb();
+  const user = dbConnect.collection("user");
+  let list;
+  if(req.query._id != undefined) list = user.find({_id: { $eq: req.query._id }});
+  else if(req.query.pseudo != undefined) list = user.find({psuedo: { $eq: req.query.pseudo }});
+  else list = user.find({});
+  if(req.query.limit != undefined) list.limit(parseInt(req.query.limit));
+  list.toArray(function (err, result) {
+    if (err) {
+      res.status(400).json({err :"Error fetching pokemons!"});
+    } else {
+      res.status(200).json(result);
+    }
+  });      
+}) 
+
+app.post("/user/insert", jsonParser, function (req, res) {
+  const dbConnect = dbo.getDb();
+  const user = dbConnect.collection("user");
+
+  let insert = {};
+  if(req.body.pseudo == undefined || req.body.password == undefined){
+    res.status(400).send("Tout les paramètres ne sont pas envoyés.");
+    return;
+  }
+
+  insert.pseudo = req.body.pseudo;
+  insert.password = req.body.password;  
+  
+  user.insertOne(
+    {...insert},
+    function (err, result) {
+      if (err) throw err;
+      res.status(200).json(result);
+    }
+  );
+})
+
+
+app.delete("/user/delete", jsonParser, function (req, res) {
+  const dbConnect = dbo.getDb();
+  const user = dbConnect.collection("user");
+  let list;
+  if(req.body.uid != undefined) list = user.deleteOne({ _id: ObjectId(req.body.uid) }, deleteCallBack);
+  else if(req.body.pseudo != undefined) list = user.deleteOne({ pseudo: req.body.pseudo }, deleteCallBack);
+  else if(req.body.password != undefined) list = user.deleteOne({ password: req.body.password }, deleteCallBack);
+  function deleteCallBack (err, result){
+    if (err) {
+      res.status(400).send("Error deleting User");
+    } else {
+      res.status(200).send("User successfully deleted");
+    }
+  }
+});
