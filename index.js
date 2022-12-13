@@ -13,8 +13,55 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cors());
 
 app.get("/", function (req, res) {
-    res.send("<h1>Bienvenue sur le Pokedick</h1>");
-  });
+  res.send("<h1>Bienvenue sur le Pokedick</h1>");
+});
+
+/*
+const Pokemon = require('pokemon.js');
+ 
+Pokemon.setLanguage('french');
+
+app.get("/pokemon/set", async function (req, res) {
+  let i = 1;
+  const dbConnect = dbo.getDb();
+  const poke = dbConnect.collection("pokemon");
+  while(true){
+    await Pokemon.getPokemon(i).then((p) =>{
+      console.log(p.name);
+      let insert = {};
+      insert.name = p.name;
+      insert.num = p.id;
+  
+      insert.type = [];
+      let err = undefined;
+      p.types.forEach(elm => {
+        GetType(elm["name"], 1).toArray(function (err, result) {
+          if (err) {
+            err = err;
+          } else {
+            insert.type.push(result[0]._id);
+          }
+        });
+      });
+      if(err != undefined){
+        res.status(400).send("Error fetching type!");
+        return;
+      }
+      
+      insert.genera = p.genera;
+      insert.sprites = p.sprites
+  
+      poke.insertOne(
+        {...insert},
+        function (err, result) {
+          if (err) throw err;
+       }
+      );
+    });
+    i++;
+  }
+});
+*/
 
 //GET
   //Pokedex
@@ -40,8 +87,8 @@ app.get("/pokemon", jsonParser, function (req, res) {
   const dbConnect = dbo.getDb();
   const poke = dbConnect.collection("pokemon");
   let list;
-if(req.query.name != undefined) list = poke.find({name: new RegExp('.*' + req.query.name + '.*', 'i')});
-  else if(req.query.num != undefined) list = poke.find({num: { $eq: req.query.num }});
+  if(req.query.name != undefined) list = poke.find({name: new RegExp('.*' + req.query.name + '.*', 'i')});
+  else if(req.query.num != undefined) list = poke.find({num: { $eq: parseInt(req.query.num) }});
   else list = poke.find({});
   if(req.query.limit != undefined) list.limit(parseInt(req.query.limit));
   list.toArray(function (err, result) {
@@ -100,7 +147,6 @@ app.post("/pokedex/update", jsonParser, function (req, res) {
         if (err) {
           err = err;
         } else {
-          console.log(result[0]._id);
           update.type.push(result[0]._id);
         }
       });
@@ -202,14 +248,11 @@ app.post("/pokedex/update", jsonParser, function (req, res) {
 
     insert.type = [];
     let err = undefined;
-    console.log(req.body);
     req.body.type.forEach(elm => {
-      console.log(elm);
       GetType(elm, 1).toArray(function (err, result) {
         if (err) {
           err = err;
         } else {
-          console.log(result[0]);
           insert.type.push(result[0]._id);
         }
       });
@@ -260,7 +303,6 @@ app.post("/pokedex/update", jsonParser, function (req, res) {
     if(req.body.name != undefined) search.name = req.body.name;
     if(req.body.id != undefined) search._id = ObjectId(req.body.id);
 
-    console.log({...search});
     if(Object.keys(search).length === 0){
       res.status(400).send("Aucun paramètre.");
       return;
