@@ -22,11 +22,33 @@ const Pokemon = require('pokemon.js');
 Pokemon.setLanguage('french');
 
 app.get("/pokemon/set", async function (req, res) {
+
+  const types = {};
+  types["grass"] = ObjectId('638f43a7e0f2b1b23165cc9a');
+  types["fighting"] = ObjectId('638f438be0f2b1b23165cc98');
+  types["fairy"] = ObjectId('638f4396e0f2b1b23165cc99');
+  types["psychic"] = ObjectId('638f4883880248d3ab56332f');
+  types["fire"] = ObjectId('63909d79caf7ef9980e0a68d');
+  types["water"] = ObjectId('63909d83caf7ef9980e0a68e');
+  types["bug"] = ObjectId('63909d95caf7ef9980e0a68f');
+  types["dark"] = ObjectId('63909da0caf7ef9980e0a690');
+  types["steel"] = ObjectId('63909db3caf7ef9980e0a691');
+  types["dragon"] = ObjectId('63909dbdcaf7ef9980e0a692');
+  types["ghost"] = ObjectId('63909dc7caf7ef9980e0a693');
+  types["flying"] = ObjectId('63909dcfcaf7ef9980e0a694');
+  types["ice"] = ObjectId('63909ddccaf7ef9980e0a695');
+  types["electric"] = ObjectId('63909de4caf7ef9980e0a696');
+  types["poison"] = ObjectId('63909defcaf7ef9980e0a697');
+  types["rock"] = ObjectId('63909df8caf7ef9980e0a698');
+  types["ground"] = ObjectId('63909e01caf7ef9980e0a699');
+  types["normal"] = ObjectId('63909e0bcaf7ef9980e0a69a');
+
+
   let i = 1;
   const dbConnect = dbo.getDb();
   const poke = dbConnect.collection("pokemon");
-  while(true){
-    await Pokemon.getPokemon(i).then((p) =>{
+  while(i < 5){
+    await Pokemon.getPokemon(i).then(async (p) =>{
       console.log(p.name);
       let insert = {};
       insert.name = p.name;
@@ -34,16 +56,10 @@ app.get("/pokemon/set", async function (req, res) {
   
       insert.type = [];
       let err = undefined;
-      p.types.forEach(async elm => {
-        let t = await GetType(elm["name"], 1);
-        t.toArray(function (err, result) {
-          if (err) {
-            err = err;
-          } else {
-            insert.type.push(result[0]._id);
-          }
-        });
-      });
+      for(let j = 0; j < p.types.length; j++){
+        insert.type.push(types[p.types[j]["name"]]);
+      }
+        
       if(err != undefined){
         res.status(400).send("Error fetching type!");
         return;
@@ -51,7 +67,7 @@ app.get("/pokemon/set", async function (req, res) {
       
       insert.genera = p.genera;
       insert.sprites = p.sprites
-  
+      
       poke.insertOne(
         {...insert},
         function (err, result) {
