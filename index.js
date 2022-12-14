@@ -305,10 +305,11 @@ app.post("/pokemon/update", jsonParser, function (req, res) {
       return;
     }
     
-    if(req.body.genera == undefined) insert.genera = "Pokemon";
+    if( req.body.genera == undefined || req.body.genera == "") insert.genera = "Pokemon";
     else insert.genera = req.body.genera;
     insert.sprites = {};
-    insert.sprites["front_default"] = "https://clipground.com/images/interrogation-point-clipart-4.jpg";
+    if(req.body.sprites == undefined) { insert.sprites["front_default"] = "https://clipground.com/images/interrogation-point-clipart-4.jpg";}
+    else insert.sprites["front_default"] = req.body.sprites;
 
     poke.insertOne(
       {...insert},
