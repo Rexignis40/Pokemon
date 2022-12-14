@@ -16,7 +16,7 @@ app.get("/", function (req, res) {
   res.send("<h1>Bienvenue sur le Pokedick</h1>");
 });
 
-/*
+
 const Pokemon = require('pokemon.js');
  
 Pokemon.setLanguage('french');
@@ -35,13 +35,13 @@ app.get("/pokemon/set", async function (req, res) {
       insert.type = [];
       let err = undefined;
       p.types.forEach(elm => {
-        GetType(elm["name"], 1).toArray(function (err, result) {
+        GetType(elm["name"], 1).then((t) , t.toArray(function (err, result) {
           if (err) {
             err = err;
           } else {
             insert.type.push(result[0]._id);
           }
-        });
+        }));
       });
       if(err != undefined){
         res.status(400).send("Error fetching type!");
@@ -61,7 +61,7 @@ app.get("/pokemon/set", async function (req, res) {
     i++;
   }
 });
-*/
+
 
 //GET
   //Pokedex
@@ -69,7 +69,7 @@ app.get("/pokemon/set", async function (req, res) {
     const dbConnect = dbo.getDb();
     const poke = dbConnect.collection("pokedex");
     let list;
-    if(req.query.name != undefined) list = poke.find({name: { $eq: req.query.name }});
+    if(req.query.name != undefined) list = poke.find({name: new RegExp('.*' + req.query.name + '.*', 'i')});
     else if(req.query.num != undefined) list = poke.find({num: { $eq: req.query.num }});
     else list = poke.find({});
     if(req.query.limit != undefined) list.limit(parseInt(req.query.limit));
@@ -97,7 +97,7 @@ app.get("/pokemon", jsonParser, function (req, res) {
     } else {
       res.status(200).json(result);
     }
-  });      
+  });
 });
 
   //Type
@@ -111,14 +111,14 @@ app.get("/type", jsonParser, function (req, res) {
       });
 });
 
-function GetType(name, limit){
+async function GetType(name, limit){
   const dbConnect = dbo.getDb();
   const poke = dbConnect.collection("type");
   let list;
   if(name != undefined) list = poke.find({name: { $eq: name }});
   else list = poke.find({});
   if(limit != undefined) list.limit(parseInt(limit));
-  return list; 
+  return list;
 }
 
 //POST
@@ -127,6 +127,49 @@ function GetType(name, limit){
 app.post("/pokedex/update", jsonParser, function (req, res) {
   const dbConnect = dbo.getDb();
   const poke = dbConnect.collection("pokedex");
+
+  let search;
+  let update = {};
+  if(req.body.search != undefined && req.body.search.num != undefined) search = {num: req.body.search.num};
+  else if(req.body.search != undefined && req.body.search.name != undefined) search = {name: req.body.search.name};
+  else{
+    res.status(400).send("Not id or name to update pokemon");
+    return;
+  }
+
+  if(req.body.name != undefined) update.name = req.body.name;
+  if(req.body.num != undefined) update.num = req.body.num;
+  if(req.body.type != undefined){
+    update.type = [];
+    let err = undefined;
+    req.body.type.forEach(elm => {
+      GetType(elm, 1).toArray(function (err, result) {
+        if (err) {
+          err = err;
+        } else {
+          update.type.push(result[0]._id);
+        }
+      });
+    });
+    if(err != undefined){
+      res.status(400).send("Error fetching type!");
+      return;
+    }
+  }
+  
+  poke.updateOne(
+    {...search},
+    {$set : {...update}},
+    function (err, result) {
+      if (err) throw err;
+      res.status(200).json(result);
+   }
+  );
+});
+
+app.post("/pokemon/update", jsonParser, function (req, res) {
+  const dbConnect = dbo.getDb();
+  const poke = dbConnect.collection("pokemon");
 
   let search;
   let update = {};
@@ -262,8 +305,9 @@ app.post("/pokedex/update", jsonParser, function (req, res) {
       return;
     }
     
-    insert.genera = "Pokemon";
-    insert.sprites = {}
+    if(req.body.genera == undefined) insert.genera = "Pokemon";
+    else insert.genera = req.body.genera;
+    insert.sprites = {};
     insert.sprites["front_default"] = "https://clipground.com/images/interrogation-point-clipart-4.jpg";
 
     poke.insertOne(
@@ -355,61 +399,3 @@ app.delete("/pokemon/delete", jsonParser, function (req, res) {
 app.listen(port, function () {
     console.log(`App listening on port ${port}!`);
   });
-
-
-// système de user
-app.get("/user", jsonParser, function (req, res) {
-  const dbConnect = dbo.getDb();
-  const user = dbConnect.collection("user");
-  let list;
-  if(req.query._id != undefined) list = user.find({_id: { $eq: req.query._id }});
-  else if(req.query.pseudo != undefined) list = user.find({psuedo: { $eq: req.query.pseudo }});
-  else list = user.find({});
-  if(req.query.limit != undefined) list.limit(parseInt(req.query.limit));
-  list.toArray(function (err, result) {
-    if (err) {
-      res.status(400).json({err :"Error fetching pokemons!"});
-    } else {
-      res.status(200).json(result);
-    }
-  });      
-}) 
-
-app.post("/user/insert", jsonParser, function (req, res) {
-  const dbConnect = dbo.getDb();
-  const user = dbConnect.collection("user");
-
-  let insert = {};
-  if(req.body.pseudo == undefined || req.body.password == undefined){
-    res.status(400).send("Tout les paramètres ne sont pas envoyés.");
-    return;
-  }
-
-  insert.pseudo = req.body.pseudo;
-  insert.password = req.body.password;  
-  
-  user.insertOne(
-    {...insert},
-    function (err, result) {
-      if (err) throw err;
-      res.status(200).json(result);
-    }
-  );
-})
-
-
-app.delete("/user/delete", jsonParser, function (req, res) {
-  const dbConnect = dbo.getDb();
-  const user = dbConnect.collection("user");
-  let list;
-  if(req.body.uid != undefined) list = user.deleteOne({ _id: ObjectId(req.body.uid) }, deleteCallBack);
-  else if(req.body.pseudo != undefined) list = user.deleteOne({ pseudo: req.body.pseudo }, deleteCallBack);
-  else if(req.body.password != undefined) list = user.deleteOne({ password: req.body.password }, deleteCallBack);
-  function deleteCallBack (err, result){
-    if (err) {
-      res.status(400).send("Error deleting User");
-    } else {
-      res.status(200).send("User successfully deleted");
-    }
-  }
-});
