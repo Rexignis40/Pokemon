@@ -34,14 +34,15 @@ app.get("/pokemon/set", async function (req, res) {
   
       insert.type = [];
       let err = undefined;
-      p.types.forEach(elm => {
-        GetType(elm["name"], 1).then((t) , t.toArray(function (err, result) {
+      p.types.forEach(async elm => {
+        let t = await GetType(elm["name"], 1);
+        t.toArray(function (err, result) {
           if (err) {
             err = err;
           } else {
             insert.type.push(result[0]._id);
           }
-        }));
+        });
       });
       if(err != undefined){
         res.status(400).send("Error fetching type!");
